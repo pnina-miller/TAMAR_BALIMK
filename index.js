@@ -1,51 +1,57 @@
- const express = require('express');
- const mssql = require('mssql');
- const app = express();
- const sql = require('mssql')
+var createError = require("http-errors");
+const express = require("express");
+const mongoose = require("mongoose");
+var logger = require("morgan");
+const path = require("path");
+require("dotenv").config();
 
- async () => {
-     try {
-         // make sure that any items are correctly URL encoded in the connection string
-         await sql.connect('Server=tamatbalink.c9za9b4bo1zg.us-east-1.rds.amazonaws.com,1433;Database=tamatbalink;User Id=TAMAR;Password=TAMAR1277;Encrypt=true')
-         //const result = await sql.query`select * from mytable where id = ${value}`
-         console.dir(result)
-     } catch (err) {
-         // ... error checks
-     }
- }
- app.listen(8080, function () {
-    console.log('Example app listening on port 8080!');
-  });
-  
-  router.get('/', function (req, res) {
-    res.send('Hello World!');
-  });
+const PersonRouter = require("./scr/routes/person");
+const AnimalRouter = require("./scr/routes/animal");
+const MembershipRouter = require("./scr/routes/membership");
 
+const app = express();
 
-  
-  router.post('/', function (req, res) {
-    res.send('POST to Hello World!');
-  });
+app.set("views", path.join(__dirname, "views"));
+app.set("view engine", "jade");
 
-  module.exports = router;  
+app.use(logger("dev"));
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: false }));
 
+app.use(function (req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  );
+  res.header("Access-Control-Allow-Credentials", true);
+  next();
+});
 
+app.use("/person", PersonRouter);
+app.use("/animal", AnimalRouter);
+app.use("/membership", MembershipRouter);
 
-  const PersonData = new PersonData({
-     personId:Number, 
-    firstName: String,
-    lastName: String,
-    phNumber: phNumber,
-    city: String,
-    country: String
- });
+app.use(function (req, res, next) {
+  next(createError(404));
+});
 
+// error handler
+app.use(function (err, req, res, next) {
+  // set locals, only providing error in development
+  res.locals.message = err.message;
+  res.locals.error = req.app.get("env") === "development" ? err : {};
 
- 
+  // render the error page
+  res.status(err.status || 500);
+  res.render("error");
+});
 
+mongoose
+  .connect(process.env.MONGO_URL)
+  .then(() => console.log("DB connected"))
+  .catch((err) => console.log("error while connecting to Mongoose ", err));
 
-
-
-
-
-
+app.listen(8080, function () {
+  console.log("Example app listening on port 8080!");
+});
